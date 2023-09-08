@@ -5,7 +5,7 @@ on:
     branches:
       - master
   pull_request:
-    branches: [master]
+    branches: '*'
     types: [opened, synchronize]
 
 jobs:
@@ -30,12 +30,24 @@ jobs:
           command: npm run test:e2e
           start: npm run start-prod
           wait-on: 'http://localhost:5000'
+  skip_check:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: commits
+        env:
+          SKIP: ${{ contains(toJson(github.event.pull_request.body), '#SKIP') }}
+        run: echo "$SKIP"
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy
         # Only run this step if the branch is master
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
+        if: ${{ !needs.a_test_job.outputs.SKIP =='true' && github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         env:
           deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
