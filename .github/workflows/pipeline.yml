@@ -5,7 +5,7 @@ on:
     branches:
       - master
   pull_request:
-    branches: [master]
+    branches: '*'
     types: [opened, synchronize]
 
 jobs:
@@ -30,6 +30,18 @@ jobs:
           command: npm run test:e2e
           start: npm run start-prod
           wait-on: 'http://localhost:5000'
+  a_test_job:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: commits
+        env:
+          COMMITS: ${{ toJson(github.event.pull_request.body) }}
+        run: echo "$COMMITS"
   deploy:
     runs-on: ubuntu-latest
     steps:
